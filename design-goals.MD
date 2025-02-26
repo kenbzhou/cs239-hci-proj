@@ -5,7 +5,9 @@ Users highly prioritize efficiency in their AI-powered workflows; in higher comp
 
 ## Paper Prototype
 Note that we are pivoting, so the originally presented canvas view will be treated as a stretch goal.
-![Paper Prototype for Pre-privot Idea]()
+
+![Paper Prototype for Pre-privot Idea](images/hci_paper_prototype1.png)
+
 NOTE: left hand side represents the chat interface and the right hand side is the canvas/working copy of workflow goal.
 
 ## Key Takeaways
