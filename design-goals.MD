@@ -34,9 +34,11 @@ Anthropic’s parameterized thinking budget allows us to proactively tailor resp
 
 ## Implementation Plan
 
-Wednesday, Feb 26: Research potential heuristic ideas, Anthropic’s parameterized thought/response API, refresh on Streamlit documentation.
-Thursday, Feb 27th - Friday, Feb 28th: Implement bulk of ideas, or at least backend application. This involves heuristic processing of queries and mapping to Anthropic’s API, with UI/UX components being a stretch goal for these days.
-Saturday, March 1st - Sunday, March 2nd: Iron out final details; e.g. UI/UX components, streaming responses, etc.
+**Wednesday, Feb 26:** Research potential heuristic ideas, Anthropic’s parameterized thought/response API, refresh on Streamlit documentation.
+
+**Thursday, Feb 27th - Friday, Feb 28th:** Implement bulk of ideas, or at least backend application. This involves heuristic processing of queries and mapping to Anthropic’s API, with UI/UX components being a stretch goal for these days.
+
+**Saturday, March 1st - Sunday, March 2nd:** Iron out final details; e.g. UI/UX components, streaming responses, etc.
 
 ## Contributions
 
