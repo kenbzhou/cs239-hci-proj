@@ -1,0 +1,13 @@
+[project]
+name = "cs239-hci-proj"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.47.2",
+    "nltk>=3.9.1",
+    "python-dotenv>=1.0.1",
+    "streamlit>=1.42.2",
+    "watchdog>=6.0.0",
+]
