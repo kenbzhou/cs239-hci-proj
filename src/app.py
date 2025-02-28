@@ -1,6 +1,5 @@
+import itertools
 import time
-from dataclasses import dataclass
-from typing import Literal
 
 import anthropic
 import streamlit as st
@@ -28,6 +27,13 @@ if "live_thinking_limit" not in st.session_state:
         "budget_tokens"
     ]
 
+if "thinking_content" not in st.session_state:
+    st.session_state.thinking_content = {}
+
+# Add this variable to store thinking content during streaming
+if "current_thinking" not in st.session_state:
+    st.session_state.current_thinking = []
+
 
 # Initialize Claude client (you'll need an API key)
 @st.cache_resource
@@ -41,22 +47,19 @@ def get_claude_client():
     return anthropic.Anthropic(api_key=api_key)
 
 
-@dataclass
-class Block:
-    type: Literal["thinking", "text"]
-    content: str
-
-
-# stream wrapper for the thinking Claude API
-def stream_handler(stream):
+# Modify the stream_thinking function
+def stream_thinking(stream):
     for event in stream:
         if event.type == "content_block_delta":
             if event.delta.type == "thinking_delta":
-                # print(f"Thinking: {event.delta.thinking}", end="", flush=True)
-                yield Block(type="thinking", content=event.delta.thinking)
-            elif event.delta.type == "text_delta":
-                # print(f"Response: {event.delta.text}", end="", flush=True)
-                # print("GOT HERE1")
+                st.session_state.current_thinking.append(event.delta.thinking)
+                yield event.delta.thinking
+
+
+def stream_text(stream):
+    for event in stream:
+        if event.type == "content_block_delta":
+            if event.delta.type == "text_delta":
                 yield event.delta.text
 
 
@@ -72,14 +75,13 @@ def get_thinking_limit(complexity):
 
 # Display chat history and thinking details
 st.title("Claude 3.7 Thinking Demo")
+# Replace the existing message display loop
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
-    if "thinking_time" in message:
-        with st.expander("Thinking Details"):
-            st.write(f"Complexity Score: {message.get('complexity_score', 'N/A')}")
-            st.write(f"Thinking Limit: {message.get('thinking_limit', 'N/A')} tokens")
-            st.write(f"Response Time: {message['thinking_time']:.2f} seconds")
+        if "thinking_content" in message:
+            with st.expander("Thinking Process", expanded=False):
+                st.write(message["thinking_content"])
 
 # Create a container for the live complexity metrics
 metrics_container = st.container()
@@ -112,14 +114,14 @@ if prompt:
     with st.chat_message("user"):
         st.write(prompt)
 
-    # Display response with a spinner
+    # In the if prompt: block, modify the streaming section
     with st.chat_message("assistant"):
         expander = st.expander("Assistant is thinking...", expanded=True)
+        st.session_state.current_thinking = []  # Reset thinking content
 
         client = get_claude_client()
         start_time = time.time()
 
-        # Call Claude API with the determined thinking limit
         with client.messages.stream(
             model="claude-3-7-sonnet-20250219",
             max_tokens=8192,
@@ -132,31 +134,26 @@ if prompt:
             ],
             thinking={"type": "enabled", "budget_tokens": thinking_limit},
         ) as raw_stream:
-            stream = stream_handler(raw_stream)
-            print("stream.__next__()", stream.__next__())
+            raw_stream1, raw_stream2 = itertools.tee(raw_stream, 2)
+            think_stream = stream_thinking(raw_stream1)
+            text_stream = stream_text(raw_stream2)
 
-            # thinking will be first
-            for block in stream:
-                if type(block) is Block:
-                    expander.write(block.content)
-                else:
-                    st.write(block)
-                    response = block + st.write_stream(stream)
-                    break
+            expander.write_stream(think_stream)
+            response = st.write_stream(text_stream)
 
-    # Add assistant response to chat history with metadata
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": response,
-            "complexity_score": complexity_score,
-            "thinking_limit": thinking_limit,
-            # "thinking_time": thinking_time,
-        }
-    )
+        # Combine all thinking content
+        thinking_content = "\n".join(st.session_state.current_thinking)
 
-    # Update the metrics display after processing
-    # st.rerun()
+        # Add assistant response to chat history with metadata
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response,
+                "complexity_score": complexity_score,
+                "thinking_limit": thinking_limit,
+                "thinking_content": thinking_content,
+            }
+        )
 
 # Add sidebar information and show last query stats
 with st.sidebar:
