@@ -1,4 +1,3 @@
-import itertools
 import time
 
 import anthropic
@@ -106,6 +105,25 @@ st.session_state.live_complexity = complexity_score
 st.session_state.live_thinking_limit = thinking_limit
 st.session_state.last_query = prompt
 
+
+def process_stream(stream, thinking_container, response_container):
+    response_chunks = []
+    thinking_chunks = []
+
+    for event in stream:
+        if event.type == "content_block_delta":
+            if event.delta.type == "thinking_delta":
+                thinking_chunks.append(event.delta.thinking)
+                # Update thinking container in real-time
+                thinking_container.markdown("".join(thinking_chunks))
+            elif event.delta.type == "text_delta":
+                response_chunks.append(event.delta.text)
+                # Update response container in real-time
+                response_container.markdown("".join(response_chunks))
+
+    return "".join(response_chunks), "".join(thinking_chunks)
+
+
 if prompt:
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -116,7 +134,9 @@ if prompt:
 
     # In the if prompt: block, modify the streaming section
     with st.chat_message("assistant"):
-        expander = st.expander("Assistant is thinking...", expanded=True)
+        thinking_expander = st.expander("Assistant is thinking...", expanded=True)
+        thinking_container = thinking_expander.empty()
+        response_container = st.empty()
         st.session_state.current_thinking = []  # Reset thinking content
 
         client = get_claude_client()
@@ -133,13 +153,10 @@ if prompt:
                 for m in st.session_state.messages
             ],
             thinking={"type": "enabled", "budget_tokens": thinking_limit},
-        ) as raw_stream:
-            raw_stream1, raw_stream2 = itertools.tee(raw_stream, 2)
-            think_stream = stream_thinking(raw_stream1)
-            text_stream = stream_text(raw_stream2)
-
-            expander.write_stream(think_stream)
-            response = st.write_stream(text_stream)
+        ) as stream:
+            response, thinking_content = process_stream(
+                stream, thinking_container, response_container
+            )
 
         # Combine all thinking content
         thinking_content = "\n".join(st.session_state.current_thinking)
