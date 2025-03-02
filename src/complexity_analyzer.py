@@ -62,10 +62,10 @@ def analyze_complexity(question: str) -> float:
     Each component is normalized to a 0–1 scale (assuming typical ranges), and the overall score is the average.
     
     Returns a value between 0 and 1.
-    """
-    question = question.strip()
+"""
     if not question:
         return 0.0
+    question = question.strip()
 
     # --- Lexical Metrics ---
     words = re.findall(r'\w+', question.lower())
