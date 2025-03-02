@@ -82,17 +82,22 @@ for message in st.session_state.messages:
         if "thinking_content" in message:
             with st.expander("Thinking Process", expanded=False):
                 st.write(message["thinking_content"])
+                # Ensure complexity metrics are displayed correctly
+                with st.container():
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(
+                            "Query Complexity",
+                            f"{message['complexity_score']:.2f}"
+                        )
+                    with col2:
+                        st.metric(
+                            "Thinking Limit",
+                            f"{message['thinking_limit']} tokens"
+                        )
 
 # Create a container for the live complexity metrics
 metrics_container = st.container()
-
-# Display current complexity metrics before chat input
-with metrics_container:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Query Complexity", f"{st.session_state.live_complexity:.2f}")
-    with col2:
-        st.metric("Thinking Limit", f"{st.session_state.live_thinking_limit} tokens")
 
 # Chat input that submits on Enter
 prompt = st.chat_input("What would you like to know?", key="draft_input")
@@ -106,9 +111,19 @@ st.session_state.live_complexity = complexity_score
 st.session_state.live_thinking_limit = thinking_limit
 st.session_state.last_query = prompt
 
+# Display current complexity metrics before chat input
+with metrics_container:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Query Complexity", f"{st.session_state.live_complexity:.2f}")
+    with col2:
+        st.metric("Thinking Limit", f"{st.session_state.live_thinking_limit} tokens")
+
 if prompt:
     # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "user", 
+                                      "content": prompt
+                                      })
 
     # Display user message
     with st.chat_message("user"):
@@ -149,9 +164,9 @@ if prompt:
             {
                 "role": "assistant",
                 "content": response,
-                "complexity_score": complexity_score,
-                "thinking_limit": thinking_limit,
                 "thinking_content": thinking_content,
+                "complexity_score": complexity_score,
+                "thinking_limit": thinking_limit
             }
         )
 
