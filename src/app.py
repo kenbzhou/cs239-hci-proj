@@ -117,31 +117,6 @@ def custom_metric(label, value):
 # Chat input container
 with bottom():
     prompt = st.chat_input("What would you like to know?", key="draft_input")
-    with st.container():
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown(
-                custom_metric("Complexity Rating", f"{st.session_state.live_complexity:.2f}"), 
-                unsafe_allow_html=True
-            )
-
-        with col2:
-            st.markdown(
-                custom_metric("Thinking Limit", f"{st.session_state.live_thinking_limit} tokens"), 
-                unsafe_allow_html=True
-            )
-
-        with col3:
-            st.markdown(
-                custom_metric("Last Query Complexity", "0.0"), 
-                unsafe_allow_html=True
-            )
-
-        with col4:
-            st.markdown(
-                custom_metric("Last Thinking Limit", "0.0"), 
-                unsafe_allow_html=True
-            )
 
 
 # Calculate complexity for the new prompt
@@ -221,3 +196,30 @@ with st.sidebar:
         )
         st.write(f"Complexity Score: {st.session_state.live_complexity:.2f}")
         st.write(f"Thinking Limit: {st.session_state.live_thinking_limit} tokens")
+
+with bottom():
+        with st.container():
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.markdown(
+                    custom_metric("Complexity Rating", "0.0"), 
+                    unsafe_allow_html=True
+                )
+
+            with col2:
+                st.markdown(
+                    custom_metric("Thinking Limit", "0.0"), 
+                    unsafe_allow_html=True
+                )
+
+            with col3:
+                st.markdown(
+                    custom_metric("Last Query Complexity", f"{st.session_state.live_complexity:.2f}"), 
+                    unsafe_allow_html=True
+                )
+
+            with col4:
+                st.markdown(
+                    custom_metric("Last Thinking Limit", f"{st.session_state.live_thinking_limit} tokens"), 
+                    unsafe_allow_html=True
+                )
