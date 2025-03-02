@@ -6,9 +6,12 @@ import streamlit as st
 
 from complexity_analyzer import analyze_complexity
 from thought_params import ThoughtParameters
+from streamlit_extras.bottom_container import bottom 
 
 # Set page config
 st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠")
+
+
 
 # Initialize session state variables
 if "messages" not in st.session_state:
@@ -99,8 +102,47 @@ for message in st.session_state.messages:
 # Create a container for the live complexity metrics
 metrics_container = st.container()
 
-# Chat input that submits on Enter
-prompt = st.chat_input("What would you like to know?", key="draft_input")
+
+
+# Custom metric outputter.
+def custom_metric(label, value):
+    html = f"""
+    <div style="text-align: center; padding: 10px;">
+        <div style="color: #5e5e5e; font-size: 0.9rem; margin-bottom: 5px;">{label}</div>
+        <div style="color: #8a8787; font-size: 1.0rem; font-weight: bold;">{value}</div>
+    </div>
+    """
+    return html
+
+# Chat input container
+with bottom():
+    prompt = st.chat_input("What would you like to know?", key="draft_input")
+    with st.container():
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.markdown(
+                custom_metric("Complexity Rating", f"{st.session_state.live_complexity:.2f}"), 
+                unsafe_allow_html=True
+            )
+
+        with col2:
+            st.markdown(
+                custom_metric("Thinking Limit", f"{st.session_state.live_thinking_limit} tokens"), 
+                unsafe_allow_html=True
+            )
+
+        with col3:
+            st.markdown(
+                custom_metric("Last Query Complexity", "0.0"), 
+                unsafe_allow_html=True
+            )
+
+        with col4:
+            st.markdown(
+                custom_metric("Last Thinking Limit", "0.0"), 
+                unsafe_allow_html=True
+            )
+
 
 # Calculate complexity for the new prompt
 complexity_score = analyze_complexity(prompt)
@@ -110,14 +152,6 @@ thinking_limit = get_thinking_limit(complexity_score)
 st.session_state.live_complexity = complexity_score
 st.session_state.live_thinking_limit = thinking_limit
 st.session_state.last_query = prompt
-
-# Display current complexity metrics before chat input
-with metrics_container:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Query Complexity", f"{st.session_state.live_complexity:.2f}")
-    with col2:
-        st.metric("Thinking Limit", f"{st.session_state.live_thinking_limit} tokens")
 
 if prompt:
     # Add user message to chat history
