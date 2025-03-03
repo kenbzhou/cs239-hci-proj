@@ -22,13 +22,19 @@ This Streamlit application demonstrates how to optimize Claude 3.7's thinking li
    ```
    uv sync
    ```
-5. Set up your Claude API key:
+5. Install custom component into src directory
+   ```
+   cd src
+   git clone https://github.com/kenbzhou/streamlit-keyup
+   ```
+
+6. Set up your Claude API key:
    - Create a `.streamlit/secrets.toml` file with:
      ```
      ANTHROPIC_API_KEY = "your-api-key-here"
      ```
 
-6. Run the application:
+7. Run the application:
    ```
    streamlit run src/app.py
    ```
