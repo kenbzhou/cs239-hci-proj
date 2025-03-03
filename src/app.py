@@ -17,7 +17,7 @@ build_dir = Path(__file__).parent.absolute() / "streamlit-keyup" / "src" / "st_k
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
 
 # Set page config
-st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠")
+st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠", layout="wide")
 
 if "prompt" not in st.session_state:
     st.session_state.prompt = ""
@@ -52,6 +52,9 @@ if "render_inc" not in st.session_state:
 if "keyup_key" not in st.session_state:
     st.session_state.keyup_key = f"ku{st.session_state.render_inc}"
 
+# Slider var
+if "slider_complexity" not in st.session_state:
+    st.session_state.slider_complexity = "Automatic"
 
 # Initialize Claude client (you'll need an API key)
 @st.cache_resource
@@ -87,9 +90,20 @@ def get_thinking_limit(complexity):
         return ThoughtParameters.QUICK.value["budget_tokens"]  # Simple queries
     elif complexity < 0.6:
         return ThoughtParameters.BALANCED.value["budget_tokens"]  # Moderate complexity
-    else:
+    elif complexity < 0.8:
         return ThoughtParameters.THOROUGH.value["budget_tokens"]  # Complex queries
+    else:
+        return ThoughtParameters.DEEP.value["budget_tokens"]
 
+def map_manual_thinking(complexity: str):
+    assert complexity != "Automatic"
+    mappings = {
+        "Quick"     : 0.00,
+        "Balanced"  : 0.50,
+        "Thorough"  : 0.75,
+        "Deep"      : 1.00
+    }
+    return mappings[complexity]
 
 # Display chat history and thinking details
 st.title("Claude 3.7 Thinking Demo")
@@ -146,11 +160,11 @@ if st.session_state["prompt"] != "":
 st.session_state.last_query = prompt
 
 # Calculate complexity for the new prompt
-curr_complexity = analyze_complexity(value)
+curr_complexity = analyze_complexity(value) if st.session_state.slider_complexity == "Automatic" else map_manual_thinking(st.session_state.slider_complexity)
 curr_thinking_limit = get_thinking_limit(curr_complexity)
 
 if prompt:
-    complexity_score = analyze_complexity(prompt)
+    complexity_score = analyze_complexity(prompt) if st.session_state.slider_complexity == "Automatic" else map_manual_thinking(st.session_state.slider_complexity)
     thinking_limit = get_thinking_limit(complexity_score)
     
     st.session_state.live_complexity = complexity_score
@@ -162,8 +176,20 @@ else:
     if "live_thinking_limit" not in st.session_state:
         st.session_state.live_thinking_limit = 1024
 
-
+@st.fragment
+def slider_impl(): 
+   st.session_state.slider_complexity = st.select_slider("Select a thought budget",
+                                                        options = ["Quick",
+                                                                    "Balanced",
+                                                                    "Automatic",
+                                                                    "Thorough",
+                                                                    "Deep"],
+                                                        value = "Automatic",
+                                                        label_visibility = "hidden"
+    )
+   
 with bottom():
+    slider_impl()
     with st.container():
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -190,6 +216,7 @@ with bottom():
                 unsafe_allow_html=True
             )
 
+
 if prompt:
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", 
@@ -210,7 +237,7 @@ if prompt:
 
         with client.messages.stream(
             model="claude-3-7-sonnet-20250219",
-            max_tokens=8192,
+            max_tokens=20092,
             temperature=1,
             system=f"""You are an AI assistant with a specific thinking token limit of {st.session_state.live_thinking_limit}.
                         Carefully consider the user's request but optimize for efficient responses.""",
