@@ -4,11 +4,17 @@ import time
 import anthropic
 import streamlit as st
 
+from pathlib import Path
 from complexity_analyzer import analyze_complexity
 from thought_params import ThoughtParameters
 from streamlit_extras.bottom_container import bottom
 from streamlit_extras.stylable_container import stylable_container
 from st_keyup import st_keyup
+import streamlit.components.v1 as components
+
+
+build_dir = Path(__file__).parent.absolute() / "streamlit-keyup" / "src" / "st_keyup" / "frontend"
+st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
 
 # Set page config
 st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠")
@@ -128,7 +134,7 @@ def send_data():
 
 # Chat input container (with keyup to provide custom funcitonality)
 with bottom():
-    value = st_keyup("What would you like to discuss today?", debounce=250, key=st.session_state.keyup_key)
+    value = st_keyup_chat(label="What would you like to discuss today?", debounce=250, key=st.session_state.keyup_key)
     st.session_state["value_dynamic"] = value
     st.button("Submit", on_click = send_data)
 
