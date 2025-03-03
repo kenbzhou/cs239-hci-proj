@@ -97,7 +97,8 @@ def analyze_complexity(question: str) -> float:
     norm_punc = max(0, min(1, punc_density / 0.2))  # Assume 0.2 is a high density
 
     # --- Combine All Components ---
-    overall_complexity = (lexical_score + norm_fk + norm_gf + norm_smog + norm_punc) / 5.0
+    #overall_complexity = (lexical_score + norm_fk + norm_gf + norm_smog + norm_punc) / 5.0
+    overall_complexity = .15*lexical_score + .2*norm_fk + .3*norm_gf + .3*norm_smog + .05*norm_punc
     return max(0, min(1, overall_complexity))
 
 # ---- Example Usage ----
@@ -107,5 +108,13 @@ if __name__ == "__main__":
         "explain how this relates to the probability density function of a Beta distribution "
         "and provide a proof using both integration by parts and substitution methods."
     )
+
+    test2 = "hello there!"
+
+    
+    
     score = analyze_complexity(test)
-    print("Complexity Score:", score)
+    print("Complexity Score 1:", score)
+
+    score = analyze_complexity(test2)
+    print("Complexity Score 1:", score)
