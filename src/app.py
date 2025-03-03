@@ -6,12 +6,15 @@ import streamlit as st
 
 from complexity_analyzer import analyze_complexity
 from thought_params import ThoughtParameters
-from streamlit_extras.bottom_container import bottom 
+from streamlit_extras.bottom_container import bottom
+from streamlit_extras.stylable_container import stylable_container
+from st_keyup import st_keyup
 
 # Set page config
 st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠")
 
-
+if "prompt" not in st.session_state:
+    st.session_state.prompt = ""
 
 # Initialize session state variables
 if "messages" not in st.session_state:
@@ -36,6 +39,12 @@ if "thinking_content" not in st.session_state:
 # Add this variable to store thinking content during streaming
 if "current_thinking" not in st.session_state:
     st.session_state.current_thinking = []
+
+# Evil rerendering hack to automatically clear input field.
+if "render_inc" not in st.session_state:
+    st.session_state.render_inc = 0
+if "keyup_key" not in st.session_state:
+    st.session_state.keyup_key = f"ku{st.session_state.render_inc}"
 
 
 # Initialize Claude client (you'll need an API key)
@@ -99,11 +108,6 @@ for message in st.session_state.messages:
                             f"{message['thinking_limit']} tokens"
                         )
 
-# Create a container for the live complexity metrics
-metrics_container = st.container()
-
-
-
 # Custom metric outputter.
 def custom_metric(label, value):
     html = f"""
@@ -114,32 +118,57 @@ def custom_metric(label, value):
     """
     return html
 
-# Chat input container
+def send_data():
+    st.session_state["prompt"] = st.session_state["value_dynamic"]
+    st.session_state.render_inc += 1
+    st.session_state.keyup_key = f"ku{st.session_state.render_inc}"
+        
+    # Clear the input value
+    st.session_state["value_dynamic"] = ""
+
+# Chat input container (with keyup to provide custom funcitonality)
 with bottom():
-    prompt = st.chat_input("What would you like to know?", key="draft_input")
+    value = st_keyup("What would you like to discuss today?", debounce=250, key=st.session_state.keyup_key)
+    st.session_state["value_dynamic"] = value
+    st.button("Submit", on_click = send_data)
 
-
-# Calculate complexity for the new prompt
-complexity_score = analyze_complexity(prompt)
-thinking_limit = get_thinking_limit(complexity_score)
+prompt = ""
+if st.session_state["prompt"] != "":
+    prompt = st.session_state["prompt"]
 
 # Update session state
-st.session_state.live_complexity = complexity_score
-st.session_state.live_thinking_limit = thinking_limit
 st.session_state.last_query = prompt
+
+# Calculate complexity for the new prompt
+curr_complexity = analyze_complexity(value)
+curr_thinking_limit = get_thinking_limit(curr_complexity)
+
+if prompt:
+    complexity_score = analyze_complexity(prompt)
+    thinking_limit = get_thinking_limit(complexity_score)
+    
+    st.session_state.live_complexity = complexity_score
+    st.session_state.live_thinking_limit = thinking_limit
+else:
+    # Use existing values if they exist, otherwise use defaults
+    if "live_complexity" not in st.session_state:
+        st.session_state.live_complexity = 0.0
+    if "live_thinking_limit" not in st.session_state:
+        st.session_state.live_thinking_limit = 1024
+
 
 with bottom():
     with st.container():
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.markdown(
-                custom_metric("Complexity Rating", "0.0"), 
+                custom_metric("Complexity Rating", f"{curr_complexity:.2f}"), 
                 unsafe_allow_html=True
             )
 
         with col2:
             st.markdown(
-                custom_metric("Thinking Limit", "0.0"), 
+                custom_metric("Thinking Limit", f"{curr_thinking_limit} tokens"), 
                 unsafe_allow_html=True
             )
 
@@ -177,13 +206,13 @@ if prompt:
             model="claude-3-7-sonnet-20250219",
             max_tokens=8192,
             temperature=1,
-            system=f"""You are an AI assistant with a specific thinking token limit of {thinking_limit}.
+            system=f"""You are an AI assistant with a specific thinking token limit of {st.session_state.live_thinking_limit}.
                         Carefully consider the user's request but optimize for efficient responses.""",
             messages=[
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
             ],
-            thinking={"type": "enabled", "budget_tokens": thinking_limit},
+            thinking={"type": "enabled", "budget_tokens": st.session_state.live_thinking_limit},
         ) as raw_stream:
             raw_stream1, raw_stream2 = itertools.tee(raw_stream, 2)
             think_stream = stream_thinking(raw_stream1)
@@ -201,10 +230,11 @@ if prompt:
                 "role": "assistant",
                 "content": response,
                 "thinking_content": thinking_content,
-                "complexity_score": complexity_score,
-                "thinking_limit": thinking_limit
+                "complexity_score": st.session_state.live_complexity,
+                "thinking_limit": st.session_state.live_thinking_limit
             }
         )
+    st.session_state.prompt = ""
 
 # Add sidebar information and show last query stats
 with st.sidebar:
@@ -215,12 +245,3 @@ with st.sidebar:
     The app uses a basic NLP heuristic to evaluate query complexity
     and sets the thinking limit accordingly.
     """)
-
-    if st.session_state.last_query:
-        st.subheader("Last Query Stats")
-        st.write(
-            f'Query: "{st.session_state.last_query[:50]}{"..." if len(st.session_state.last_query) > 50 else ""}"'
-        )
-        st.write(f"Complexity Score: {st.session_state.live_complexity:.2f}")
-        st.write(f"Thinking Limit: {st.session_state.live_thinking_limit} tokens")
-
