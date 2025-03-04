@@ -37,7 +37,10 @@ def simple_flesch_kincaid(text: str) -> float:
         syllable_count += count if count > 0 else 1
 
     # Simplified Flesch-Kincaid formula:
-    grade = 0.39 * (word_count / sentence_count) + 11.8 * (syllable_count / word_count) - 15.59
+    if word_count != 0:
+        grade = 0.39 * (word_count / sentence_count) + 11.8 * (syllable_count / word_count) - 15.59
+    else:
+        grade = 0
     return grade
 
 # ---- Additional Metric: Punctuation Density ----
