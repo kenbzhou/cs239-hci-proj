@@ -90,7 +90,7 @@ def map_manual_thinking(complexity: str):
 
 
 # Display chat history and thinking details
-st.title("Claude: the Sonnet, and the Wholly Spearmint")
+st.title("Claude Sonnet 3.7+: Wholly Spearmint Edition")
 # Replace the existing message display loop
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -199,12 +199,13 @@ else:
 @st.fragment
 def slider_impl():
     st.session_state.slider_complexity = st.slider(
-        "Select a thought budget",
+        "Select a thought budget:",
         min_value=0.0,
         max_value=1.0,
         value=0.5,  # Default value
         step=0.01,
-        format="%.2f"  # Ensures two decimal places
+        format="%.2f",  # Ensures two decimal places
+        #label_visibility="hidden"
     )
 
 
@@ -262,7 +263,7 @@ if prompt:
             model="claude-3-7-sonnet-20250219",
             max_tokens=20092,
             temperature=1,
-            system = f"""You are an AI assistant with a thinking token limit of {st.session_state.live_thinking_limit} that is heuristically assigned based on the complexity of the user's query.
+            system = f"""You are an AI assistant with a thinking token limit of {st.session_state.live_thinking_limit} that is heuristically assigned based on the complexity of the user's query, which has been determined to be {st.session_state.live_complexity}.
                         For low complexity queries (where thinking limit < 1200):
                         - Ideally use minimal thinking tokens, unless required.
                         - Provide concise, direct responses
@@ -318,6 +319,8 @@ with st.sidebar:
     The app uses a basic NLP heuristic to evaluate query complexity
     and sets the thinking limit accordingly.
     """)
-    st.session_state.manual_thinking = st.toggle("Manually set Thought Budget?", value=False)
+    st.title("Manual Settings")
     slider_impl()
+    st.session_state.manual_thinking = st.toggle("Manually set Thought Budget?", value=False)
+
 
