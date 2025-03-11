@@ -6,10 +6,8 @@ def get_thinking_limit(complexity):
         return ThoughtParameters.QUICK.value["budget_tokens"]  # Simple queries
     elif complexity < 0.6:
         return ThoughtParameters.BALANCED.value["budget_tokens"]  # Moderate complexity
-    elif complexity < 0.8:
-        return ThoughtParameters.THOROUGH.value["budget_tokens"]  # Complex queries
     else:
-        return ThoughtParameters.DEEP.value["budget_tokens"]
+        return int(complexity * 16000)  # Complex queries
 
 # Custom metric for stats display
 def custom_metric(label, value):
