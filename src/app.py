@@ -97,7 +97,7 @@ for message in st.session_state.messages:
                 st.write(message["thinking_content"])
                 # Ensure complexity metrics are displayed correctly
                 with st.container():
-                    col1, col2 = st.columns(2)
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         st.metric(
                             "Query Complexity", f"{message['complexity_score']:.2f}"
@@ -105,6 +105,10 @@ for message in st.session_state.messages:
                     with col2:
                         st.metric(
                             "Thinking Limit", f"{message['thinking_limit']} tokens"
+                        )
+                    with col3:
+                        st.metric(
+                            "Latency", f"{round(message['latency'],1)} secs"
                         )
 
 
@@ -286,6 +290,7 @@ if prompt:
             response, thinking_content = process_stream(
                 stream, thinking_container, response_container
             )
+        elapsed = time.time() - start_time
         # Combine all thinking content
         # Add assistant response to chat history with metadata
         st.session_state.messages.append(
@@ -295,6 +300,7 @@ if prompt:
                 "thinking_content": thinking_content,
                 "complexity_score": st.session_state.live_complexity,
                 "thinking_limit": st.session_state.live_thinking_limit,
+                "latency": elapsed
             }
         )
     st.session_state.prompt = ""
