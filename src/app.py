@@ -10,6 +10,7 @@ from streamlit_extras.stylable_container import stylable_container
 
 from complexity_analyzer import analyze_complexity
 from thought_params import ThoughtParameters
+from helpers import get_thinking_limit, custom_metric, process_stream
 
 build_dir = (
     Path(__file__).parent.absolute()
@@ -22,6 +23,8 @@ st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir
 
 # Set page config
 st.set_page_config(page_title="CS Dubz", page_icon="🧠", layout="wide")
+
+# Set up session states.
 
 if "prompt" not in st.session_state:
     st.session_state.prompt = ""
@@ -59,7 +62,7 @@ if "slider_complexity" not in st.session_state:
 if "manual_thinking" not in st.session_state:
     st.session_state.manual_thinking = False
 
-
+### Functions unable to be moved to helper due to dependency on streamlit state.
 # Initialize Claude client (you'll need an API key)
 @st.cache_resource
 def get_claude_client():
@@ -71,22 +74,25 @@ def get_claude_client():
             st.stop()
     return anthropic.Anthropic(api_key=api_key)
 
-# Function to calculate thinking limit based on complexity
-def get_thinking_limit(complexity):
-    if complexity < 0.3:
-        return ThoughtParameters.QUICK.value["budget_tokens"]  # Simple queries
-    elif complexity < 0.6:
-        return ThoughtParameters.BALANCED.value["budget_tokens"]  # Moderate complexity
-    elif complexity < 0.8:
-        return ThoughtParameters.THOROUGH.value["budget_tokens"]  # Complex queries
-    else:
-        return ThoughtParameters.DEEP.value["budget_tokens"]
+def send_data():
+    st.session_state["prompt"] = st.session_state["value_dynamic"]
+    st.session_state.render_inc += 1
+    st.session_state.keyup_key = f"ku{st.session_state.render_inc}"
 
+    # Clear the input value
+    st.session_state["value_dynamic"] = ""
 
-def map_manual_thinking(complexity: str):
-    assert complexity != "Automatic"
-    mappings = {"Quick": 0.00, "Balanced": 0.50, "Thorough": 0.75, "Deep": 1.00}
-    return mappings[complexity]
+@st.fragment
+def slider_impl():
+    st.session_state.slider_complexity = st.slider(
+        "Select a thought budget:",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.5,  # Default value
+        step=0.01,
+        format="%.2f",  # Ensures two decimal places
+        #label_visibility="hidden"
+    )
 
 
 # Display chat history and thinking details
@@ -113,45 +119,6 @@ for message in st.session_state.messages:
                         st.metric(
                             "Latency", f"{round(message['latency'],1)} secs"
                         )
-
-
-# Custom metric outputter.
-def custom_metric(label, value):
-    html = f"""
-    <div style="text-align: center; padding: 10px;">
-        <div style="color: #5e5e5e; font-size: 0.9rem; margin-bottom: 5px;">{label}</div>
-        <div style="color: #8a8787; font-size: 1.0rem; font-weight: bold;">{value}</div>
-    </div>
-    """
-    return html
-
-
-def send_data():
-    st.session_state["prompt"] = st.session_state["value_dynamic"]
-    st.session_state.render_inc += 1
-    st.session_state.keyup_key = f"ku{st.session_state.render_inc}"
-
-    # Clear the input value
-    st.session_state["value_dynamic"] = ""
-
-
-def process_stream(stream, thinking_container, response_container):
-    response_chunks = []
-    thinking_chunks = []
-
-    for event in stream:
-        if event.type == "content_block_delta":
-            if event.delta.type == "thinking_delta":
-                thinking_chunks.append(event.delta.thinking)
-                # Update thinking container in real-time
-                thinking_container.markdown("".join(thinking_chunks))
-            elif event.delta.type == "text_delta":
-                response_chunks.append(event.delta.text)
-                # Update response container in real-time
-                response_container.markdown("".join(response_chunks))
-
-    return "".join(response_chunks), "".join(thinking_chunks)
-
 
 # Chat input container (with keyup to provide custom funcitonality)
 with bottom():
@@ -194,19 +161,6 @@ else:
         st.session_state.live_complexity = 0.0
     if "live_thinking_limit" not in st.session_state:
         st.session_state.live_thinking_limit = 1024
-
-
-@st.fragment
-def slider_impl():
-    st.session_state.slider_complexity = st.slider(
-        "Select a thought budget:",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.5,  # Default value
-        step=0.01,
-        format="%.2f",  # Ensures two decimal places
-        #label_visibility="hidden"
-    )
 
 
 with bottom():
@@ -270,13 +224,13 @@ if prompt:
                         - Avoid unnecessary elaboration
                         - Focus on answering exactly what was asked
 
-                        For medium complexity queries (where thinking limit is 1200-6000):
+                        For medium complexity queries (where thinking limit is 1200-6000, complexity > 0.3):
                         - Ideally use a moderate portion of your thinking budget, unless a deviation is required.
                         - Balance depth with efficiency
                         - Provide supporting details where valuable
                         - Show clear reasoning for your conclusions
 
-                        For high complexity queries (where thinking limit > 6000):
+                        For high complexity queries (where thinking limit > 6000, complexity > 0.7):
                         - Utilize most of your thinking budget
                         - Demonstrate sophisticated analysis and insight
                         - Consider multiple perspectives and edge cases
@@ -284,6 +238,8 @@ if prompt:
                         - Show depth of reasoning that reflects your extended thinking
 
                         Your response quality and depth should scale proportionally with your thinking budget. As the thinking limit increases, users expect to see increasingly insightful, thorough, and intelligent responses that clearly reflect the additional cognitive resources applied to their query.
+
+                        Never explicitly mention the complexity score of the query. Feel free to mention the high-level complexity of the query, however.
 
                         Always prioritize being informative and helpful at all complexity levels, while adjusting your response depth to match the assigned thinking resources. If users indicate a desire for more depth, be responsive by using more of your thinking budget.""",
             messages=[
