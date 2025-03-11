@@ -46,10 +46,6 @@ if "live_thinking_limit" not in st.session_state:
 if "thinking_content" not in st.session_state:
     st.session_state.thinking_content = {}
 
-# Add this variable to store thinking content during streaming
-if "current_thinking" not in st.session_state:
-    st.session_state.current_thinking = []
-
 # Evil rerendering hack to automatically clear input field.
 if "render_inc" not in st.session_state:
     st.session_state.render_inc = 0
@@ -71,23 +67,6 @@ def get_claude_client():
             st.warning("Please enter an API key to continue")
             st.stop()
     return anthropic.Anthropic(api_key=api_key)
-
-
-# Modify the stream_thinking function
-def stream_thinking(stream):
-    for event in stream:
-        if event.type == "content_block_delta":
-            if event.delta.type == "thinking_delta":
-                st.session_state.current_thinking.append(event.delta.thinking)
-                yield event.delta.thinking
-
-
-def stream_text(stream):
-    for event in stream:
-        if event.type == "content_block_delta":
-            if event.delta.type == "text_delta":
-                yield event.delta.text
-
 
 # Function to calculate thinking limit based on complexity
 def get_thinking_limit(complexity):
@@ -267,7 +246,6 @@ if prompt:
         thinking_expander = st.expander("Assistant is thinking...", expanded=True)
         thinking_container = thinking_expander.empty()
         response_container = st.empty()
-        st.session_state.current_thinking = []  # Reset thinking content
 
         client = get_claude_client()
         start_time = time.time()
@@ -276,8 +254,29 @@ if prompt:
             model="claude-3-7-sonnet-20250219",
             max_tokens=20092,
             temperature=1,
-            system=f"""You are an AI assistant with a specific thinking token limit of {st.session_state.live_thinking_limit}.
-                        Carefully consider the user's request but optimize for efficient responses.""",
+            system = f"""You are an AI assistant with a thinking token limit of {st.session_state.live_thinking_limit} that is heuristically assigned based on the complexity of the user's query.
+                        For low complexity queries (where thinking limit < 1200):
+                        - Ideally use minimal thinking tokens, unless required.
+                        - Provide concise, direct responses
+                        - Avoid unnecessary elaboration
+                        - Focus on answering exactly what was asked
+
+                        For medium complexity queries (where thinking limit is 1200-6000):
+                        - Ideally use a moderate portion of your thinking budget, unless a deviation is required.
+                        - Balance depth with efficiency
+                        - Provide supporting details where valuable
+                        - Show clear reasoning for your conclusions
+
+                        For high complexity queries (where thinking limit > 6000):
+                        - Utilize most of your thinking budget
+                        - Demonstrate sophisticated analysis and insight
+                        - Consider multiple perspectives and edge cases
+                        - Provide comprehensive, nuanced responses
+                        - Show depth of reasoning that reflects your extended thinking
+
+                        Your response quality and depth should scale proportionally with your thinking budget. As the thinking limit increases, users expect to see increasingly insightful, thorough, and intelligent responses that clearly reflect the additional cognitive resources applied to their query.
+
+                        Always prioritize being informative and helpful at all complexity levels, while adjusting your response depth to match the assigned thinking resources. If users indicate a desire for more depth, be responsive by using more of your thinking budget.""",
             messages=[
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
@@ -287,10 +286,7 @@ if prompt:
             response, thinking_content = process_stream(
                 stream, thinking_container, response_container
             )
-
         # Combine all thinking content
-        thinking_content = "\n".join(st.session_state.current_thinking)
-
         # Add assistant response to chat history with metadata
         st.session_state.messages.append(
             {
