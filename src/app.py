@@ -105,13 +105,13 @@ def render_landing():
         st.write("""
                  Thank you for trying our product! 
                  
-                 The Wholly Spearmint edition of Claud 3.7 hopes to provide to you a fresh LLM experience tailored to your querying needs, where the complexity of your requests is automatically mapped to the Claude's thinking as it generates a response!
+                 The Wholly Spearmint edition of Claude 3.7 hopes to provide to you a FRESH experience tailored to your querying needs, where we optimize the latency and depth of our answers to the complexity of your queries!
                  
                  """)
-        st.write("## Here are our key features:")
-        st.info("""### Query Complexity Scoring:  \n   - Based on the structure and content of your questions, we will automatically determine how complex your queries are.  \n   - This will be reflected as a 'Complexity Score', and will help inform the model how much it is allowed to thinking about your question.""")
+        st.write("## Our key features:")
+        st.info("""### Query Complexity Scoring:  \n   - Based on the structure and content of your questions, we will automatically determine how complex your queries are.  \n   - This will be reflected as a 'Complexity Score' from 0.00 to 1.00, and will help inform the model how much it is allowed to think about your question.""")
         st.info("""### Thinking Limit Settings:  \n   - Based on how complex your question is, our chatbot will automatically determine how much it is allowed to 'think' about your questions.  \n   - Higher levels of thinking may result in better answers, but will also mean higher wait-times that are not always compatible with less complex queries. \n   -  We will communicate a raw 'thinking limit' score that corresponds to the maximum amount a model is allowed to think about the question; keep in mind that the model may not always hit this limit.""")
-        st.info("""### Thinking Limit Manual Configuration:  \n   - Should you desire a higher thinking level for your queries, our sidebar allows you to manually tune the complexity score of your question.  \n   - Simply tick the toggle on the sidebar and slide the complexity score to the level you desire \n   -  Our app will automatically map your configured complexity score to a thinking limit; keep in mind that the model will still understand that simpler queries require less thinking.""")
+        st.info("""### Thinking Limit Manual Configuration:  \n   - Should you desire a higher thinking level for your queries, our sidebar allows you to manually tune the complexity score of your question.  \n   - Simply tick the toggle on the sidebar and slide the complexity score to the level you desire. \n   -  Our app will automatically map your configured complexity score to a thinking limit; keep in mind that the model will still understand that simpler queries require less thinking.""")
         st.info("""### Statistical History:  \n   - For each question you send: its query complexity, thinking limit, and the time it took for the full response will automatically be shown in the thinking response.  \n   - As the complexity scores and thinking limits ebb and flow, we hope that you see differences in response quality, detail, and latency that are tailored to your experience!""")
         st.write("### Ready to get started?")
         if st.button("## Get Started"):
@@ -250,7 +250,7 @@ def render_app():
                             - Focus on answering exactly what was asked
 
                             For medium complexity queries (where thinking limit is 1200-6000, complexity > 0.3):
-                            - Ideally use a moderate portion of your thinking budget, unless a deviation is required.
+                            - Ideally use at least a moderate portion of your thinking budget, unless a deviation is required.
                             - Balance depth with efficiency
                             - Provide supporting details where valuable
                             - Show clear reasoning for your conclusions
