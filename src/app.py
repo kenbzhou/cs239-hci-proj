@@ -21,7 +21,7 @@ build_dir = (
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
 
 # Set page config
-st.set_page_config(page_title="Claude 3.7 Thinking Demo", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="CS Dubz", page_icon="🧠", layout="wide")
 
 if "prompt" not in st.session_state:
     st.session_state.prompt = ""
@@ -56,6 +56,9 @@ if "keyup_key" not in st.session_state:
 if "slider_complexity" not in st.session_state:
     st.session_state.slider_complexity = "Automatic"
 
+if "manual_thinking" not in st.session_state:
+    st.session_state.manual_thinking = False
+
 
 # Initialize Claude client (you'll need an API key)
 @st.cache_resource
@@ -87,7 +90,7 @@ def map_manual_thinking(complexity: str):
 
 
 # Display chat history and thinking details
-st.title("Claude 3.7 Thinking Demo")
+st.title("Claude: the Sonnet, and the Wholly Spearmint")
 # Replace the existing message display loop
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -170,16 +173,16 @@ st.session_state.last_query = prompt
 # Calculate complexity for the new prompt
 curr_complexity = (
     analyze_complexity(value)
-    if st.session_state.slider_complexity == "Automatic"
-    else map_manual_thinking(st.session_state.slider_complexity)
+    if not st.session_state.manual_thinking
+    else st.session_state.slider_complexity
 )
 curr_thinking_limit = get_thinking_limit(curr_complexity)
 
 if prompt:
     complexity_score = (
         analyze_complexity(prompt)
-        if st.session_state.slider_complexity == "Automatic"
-        else map_manual_thinking(st.session_state.slider_complexity)
+        if not st.session_state.manual_thinking
+        else st.session_state.slider_complexity
     )
     thinking_limit = get_thinking_limit(complexity_score)
 
@@ -195,16 +198,17 @@ else:
 
 @st.fragment
 def slider_impl():
-    st.session_state.slider_complexity = st.select_slider(
+    st.session_state.slider_complexity = st.slider(
         "Select a thought budget",
-        options=["Quick", "Balanced", "Automatic", "Thorough", "Deep"],
-        value="Automatic",
-        label_visibility="hidden",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.5,  # Default value
+        step=0.01,
+        format="%.2f"  # Ensures two decimal places
     )
 
 
 with bottom():
-    slider_impl()
     with st.container():
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -314,3 +318,6 @@ with st.sidebar:
     The app uses a basic NLP heuristic to evaluate query complexity
     and sets the thinking limit accordingly.
     """)
+    st.session_state.manual_thinking = st.toggle("Manually set Thought Budget?", value=False)
+    slider_impl()
+
