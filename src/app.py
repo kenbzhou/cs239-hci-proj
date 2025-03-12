@@ -12,13 +12,7 @@ from complexity_analyzer import analyze_complexity
 from thought_params import ThoughtParameters
 from helpers import get_thinking_limit, custom_metric, process_stream
 
-build_dir = (
-    Path(__file__).parent.absolute()
-    / "streamlit-keyup"
-    / "src"
-    / "st_keyup"
-    / "frontend"
-)
+build_dir = Path(__file__).parent.absolute() / "components" / "keyup"
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
 
 # Set page config
