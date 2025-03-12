@@ -15,6 +15,8 @@ from helpers import get_thinking_limit, custom_metric, process_stream
 build_dir = Path(__file__).parent.absolute() / "components" / "keyup"
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
 
+DEV_MODE = False
+
 # Set page config
 st.set_page_config(page_title="CS Dubz", page_icon="🧠", layout="wide")
 
@@ -60,17 +62,23 @@ if "manual_thinking" not in st.session_state:
 if 'show_landing' not in st.session_state:
     st.session_state.show_landing = True
 
+# Client Key
+if 'client_key' not in st.session_state:
+    st.session_state.client_key = None
+
 ### Functions unable to be moved to helper due to dependency on streamlit state.
 # Initialize Claude client (you'll need an API key)
 @st.cache_resource
 def get_claude_client():
-    api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
-    if api_key is None:
-        api_key = st.sidebar.text_input("Claude API Key", type="password")
-        if not api_key:
-            st.warning("Please enter an API key to continue")
-            st.stop()
-    return anthropic.Anthropic(api_key=api_key)
+    if st.session_state.client_key is None:
+        st.warning("Please enter an API key to continue")
+        st.stop()
+    key = st.session_state.client_key
+    if not key:
+        st.warning("API key cannot be empty")
+        st.stop()
+    print(key)
+    return anthropic.Anthropic(api_key=key)
 
 def send_data():
     st.session_state["prompt"] = st.session_state["value_dynamic"]
@@ -94,6 +102,8 @@ def slider_impl():
 
 def render_landing():
     landing = st.container()
+    if DEV_MODE:
+        st.session_state.client_key = st.secrets.get("ANTHROPIC_API_KEY", None)
     with landing:
         st.title("Welcome to Claude Sonnet 3.7+: Wholly Spearmint Edition!")
         st.write("""
@@ -107,10 +117,25 @@ def render_landing():
         st.info("""### Thinking Limit Settings:  \n   - Based on how complex your question is, our chatbot will automatically determine how much it is allowed to 'think' about your questions.  \n   - Higher levels of thinking may result in better answers, but will also mean higher wait-times that are not always compatible with less complex queries. \n   -  We will communicate a raw 'thinking limit' score that corresponds to the maximum amount a model is allowed to think about the question; keep in mind that the model may not always hit this limit.""")
         st.info("""### Thinking Limit Manual Configuration:  \n   - Should you desire a higher thinking level for your queries, our sidebar allows you to manually tune the complexity score of your question.  \n   - Simply tick the toggle on the sidebar and slide the complexity score to the level you desire. \n   -  Our app will automatically map your configured complexity score to a thinking limit; keep in mind that the model will still understand that simpler queries require less thinking.""")
         st.info("""### Statistical History:  \n   - For each question you send: its query complexity, thinking limit, and the time it took for the full response will automatically be shown in the thinking response.  \n   - As the complexity scores and thinking limits ebb and flow, we hope that you see differences in response quality, detail, and latency that are tailored to your experience!""")
-        st.write("### Ready to get started?")
-        if st.button("## Get Started"):
-            st.session_state.show_landing = False
-            st.rerun()
+        # fetch_client_key_field()
+        if st.session_state.client_key is None:
+            with st.form("my_form"):
+                st.write("### Ready to get started?")
+                st.write("Input your Anthropic Claude API Key below!")
+                key_val = st.text_input("Enter your Anthropic Key...")
+
+                # Every form must have a submit button.
+                submitted = st.form_submit_button("Submit")
+                if submitted:
+                    st.session_state.client_key = key_val
+                    st.session_state.show_landing = False
+                    time.sleep(0.5)
+                    st.rerun()
+        else:
+            st.write("### Ready to get started?")
+            if st.button("## Get Started"):
+                st.session_state.show_landing = False
+                st.rerun()
 
 
 def render_app():
