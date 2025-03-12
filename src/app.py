@@ -281,6 +281,12 @@ def render_app():
                             - Provide comprehensive, nuanced responses
                             - Show depth of reasoning that reflects your extended thinking
 
+                            In all queries that are at least 'medium complexity', your thinking should uphold and include:
+                            - extensive insight into your thought process, such that a human can understand and work through how you are arriving to your conclusions.
+                            - mentions of examples that inform your thought processes, though not so much as to clutter your thoughts with information generally unrelated to the user's query.
+                            - extensive consideration of the human's query, such that the true meaning and purpose behind the query is understood.
+                            - a lack of 'explicit mentions' of complexity score. Higher level references, such as 'this is a high complexity prompt', are ok; but explicit mentions of numbers are not.
+
                             Your response quality and depth should scale proportionally with your thinking budget. As the thinking limit increases, users expect to see increasingly insightful, thorough, and intelligent responses that clearly reflect the additional cognitive resources applied to their query.
 
                             Never explicitly mention the complexity score of the query. Feel free to mention the high-level complexity of the query, however.
