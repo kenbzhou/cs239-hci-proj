@@ -2,7 +2,6 @@ import time
 from pathlib import Path
 
 import anthropic
-import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -12,12 +11,10 @@ from streamlit_extras.bottom_container import bottom
 # from streamlit_extras.stylable_container import stylable_container
 from complexity_analyzer import analyze_complexity
 from helpers import custom_metric, get_thinking_limit, process_stream
-from thought_params import ThoughtParameters
+from thought_params import ThoughtParameters, get_thinking_emoji
 
 build_dir = Path(__file__).parent.absolute() / "components" / "keyup"
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
-
-DEV_MODE = False
 
 # Set page config
 st.set_page_config(page_title="CS Dubz", page_icon="🧠", layout="wide")
@@ -80,7 +77,7 @@ def get_claude_client():
     if not key:
         st.warning("API key cannot be empty")
         st.stop()
-    print(key)
+
     return anthropic.Anthropic(api_key=key)
 
 
@@ -108,10 +105,11 @@ def slider_impl():
 
 def render_landing():
     landing = st.container()
-    if DEV_MODE:
-        st.session_state.client_key = st.secrets.get("ANTHROPIC_API_KEY", None)
+
+    st.session_state.client_key = st.secrets.get("ANTHROPIC_API_KEY", None)
+
     with landing:
-        st.title("Welcome to Claude Sonnet 3.7+: Wholly Spearmint Edition!")
+        st.title("Welcome to Claude Sonnet 3.7++: Wholly Spearmint Edition!")
         st.write("""
                  Thank you for trying our product! 
                  
@@ -160,14 +158,18 @@ def render_app():
         with st.chat_message(message["role"]):
             st.write(message["content"])
             if "thinking_content" in message:
+                # Inline chat complexity in "thought" container
                 with st.expander("Thinking Process", expanded=False):
                     st.write(message["thinking_content"])
                     # Ensure complexity metrics are displayed correctly
                     with st.container():
                         col1, col2, col3 = st.columns(3)
                         with col1:
+                            emoji = get_thinking_emoji(message["thinking_limit"])
+
                             st.metric(
-                                "Complexity Score", f"{message['complexity_score']:.2f}"
+                                "Complexity Score",
+                                f"{emoji}: {message['complexity_score'] * 100:.2f}/100",
                             )
                         with col2:
                             st.metric(
