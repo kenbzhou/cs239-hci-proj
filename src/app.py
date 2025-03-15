@@ -2,15 +2,17 @@ import time
 from pathlib import Path
 
 import anthropic
+import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
-from st_keyup import st_keyup
-from streamlit_extras.bottom_container import bottom
-from streamlit_extras.stylable_container import stylable_container
 
+# from st_keyup import st_keyup
+from streamlit_extras.bottom_container import bottom
+
+# from streamlit_extras.stylable_container import stylable_container
 from complexity_analyzer import analyze_complexity
+from helpers import custom_metric, get_thinking_limit, process_stream
 from thought_params import ThoughtParameters
-from helpers import get_thinking_limit, custom_metric, process_stream
 
 build_dir = Path(__file__).parent.absolute() / "components" / "keyup"
 st_keyup_chat = components.declare_component("st_keyup_chat", path=str(build_dir))
@@ -59,12 +61,13 @@ if "manual_thinking" not in st.session_state:
     st.session_state.manual_thinking = False
 
 # Landing page
-if 'show_landing' not in st.session_state:
+if "show_landing" not in st.session_state:
     st.session_state.show_landing = True
 
 # Client Key
-if 'client_key' not in st.session_state:
+if "client_key" not in st.session_state:
     st.session_state.client_key = None
+
 
 ### Functions unable to be moved to helper due to dependency on streamlit state.
 # Initialize Claude client (you'll need an API key)
@@ -80,6 +83,7 @@ def get_claude_client():
     print(key)
     return anthropic.Anthropic(api_key=key)
 
+
 def send_data():
     st.session_state["prompt"] = st.session_state["value_dynamic"]
     st.session_state.render_inc += 1
@@ -87,6 +91,7 @@ def send_data():
 
     # Clear the input value
     st.session_state["value_dynamic"] = ""
+
 
 @st.fragment
 def slider_impl():
@@ -97,8 +102,9 @@ def slider_impl():
         value=0.5,  # Default value
         step=0.01,
         format="%.2f",  # Ensures two decimal places
-        #label_visibility="hidden"
+        # label_visibility="hidden"
     )
+
 
 def render_landing():
     landing = st.container()
@@ -113,10 +119,18 @@ def render_landing():
                  
                  """)
         st.write("## Our key features:")
-        st.info("""### Query Complexity Scoring:  \n   - Based on the structure and content of your questions, we will automatically determine how complex your queries are.  \n   - This will be reflected as a 'Complexity Score' from 0.00 to 1.00, and will help inform the model how much it is allowed to think about your question.""")
-        st.info("""### Thinking Limit Settings:  \n   - Based on how complex your question is, our chatbot will automatically determine how much it is allowed to 'think' about your questions.  \n   - Higher levels of thinking may result in better answers, but will also mean higher wait-times that are not always compatible with less complex queries. \n   -  We will communicate a raw 'thinking limit' score that corresponds to the maximum amount a model is allowed to think about the question; keep in mind that the model may not always hit this limit.""")
-        st.info("""### Thinking Limit Manual Configuration:  \n   - Should you desire a higher thinking level for your queries, our sidebar allows you to manually tune the complexity score of your question.  \n   - Simply tick the toggle on the sidebar and slide the complexity score to the level you desire. \n   -  Our app will automatically map your configured complexity score to a thinking limit; keep in mind that the model will still understand that simpler queries require less thinking.""")
-        st.info("""### Statistical History:  \n   - For each question you send: its query complexity, thinking limit, and the time it took for the full response will automatically be shown in the thinking response.  \n   - As the complexity scores and thinking limits ebb and flow, we hope that you see differences in response quality, detail, and latency that are tailored to your experience!""")
+        st.info(
+            """### Query Complexity Scoring:  \n   - Based on the structure and content of your questions, we will automatically determine how complex your queries are.  \n   - This will be reflected as a 'Complexity Score' from 0.00 to 1.00, and will help inform the model how much it is allowed to think about your question."""
+        )
+        st.info(
+            """### Thinking Limit Settings:  \n   - Based on how complex your question is, our chatbot will automatically determine how much it is allowed to 'think' about your questions.  \n   - Higher levels of thinking may result in better answers, but will also mean higher wait-times that are not always compatible with less complex queries. \n   -  We will communicate a raw 'thinking limit' score that corresponds to the maximum amount a model is allowed to think about the question; keep in mind that the model may not always hit this limit."""
+        )
+        st.info(
+            """### Thinking Limit Manual Configuration:  \n   - Should you desire a higher thinking level for your queries, our sidebar allows you to manually tune the complexity score of your question.  \n   - Simply tick the toggle on the sidebar and slide the complexity score to the level you desire. \n   -  Our app will automatically map your configured complexity score to a thinking limit; keep in mind that the model will still understand that simpler queries require less thinking."""
+        )
+        st.info(
+            """### Statistical History:  \n   - For each question you send: its query complexity, thinking limit, and the time it took for the full response will automatically be shown in the thinking response.  \n   - As the complexity scores and thinking limits ebb and flow, we hope that you see differences in response quality, detail, and latency that are tailored to your experience!"""
+        )
         # fetch_client_key_field()
         if st.session_state.client_key is None:
             with st.form("my_form"):
@@ -160,9 +174,7 @@ def render_app():
                                 "Thinking Limit", f"{message['thinking_limit']} tokens"
                             )
                         with col3:
-                            st.metric(
-                                "Latency", f"{round(message['latency'],1)} secs"
-                            )
+                            st.metric("Latency", f"{round(message['latency'], 1)} secs")
 
     # Chat input container (with keyup to provide custom funcitonality)
     with bottom():
@@ -206,7 +218,6 @@ def render_app():
         if "live_thinking_limit" not in st.session_state:
             st.session_state.live_thinking_limit = 1024
 
-
     with bottom():
         with st.container():
             col1, col2, col3, col4 = st.columns(4)
@@ -225,7 +236,8 @@ def render_app():
             with col3:
                 st.markdown(
                     custom_metric(
-                        "Last Query Complexity", f"{st.session_state.live_complexity:.2f}"
+                        "Last Query Complexity",
+                        f"{st.session_state.live_complexity:.2f}",
                     ),
                     unsafe_allow_html=True,
                 )
@@ -238,7 +250,6 @@ def render_app():
                     ),
                     unsafe_allow_html=True,
                 )
-
 
     if prompt:
         # Add user message to chat history
@@ -261,7 +272,7 @@ def render_app():
                 model="claude-3-7-sonnet-20250219",
                 max_tokens=20092,
                 temperature=1,
-                system = f"""You are an AI assistant with a thinking token limit of {st.session_state.live_thinking_limit} that is heuristically assigned based on the complexity of the user's query, which has been determined to be {st.session_state.live_complexity}.
+                system=f"""You are an AI assistant with a thinking token limit of {st.session_state.live_thinking_limit} that is heuristically assigned based on the complexity of the user's query, which has been determined to be {st.session_state.live_complexity}.
                             For low complexity queries (where thinking limit < 1200):
                             - Ideally use minimal thinking tokens, unless required.
                             - Provide concise, direct responses
@@ -311,7 +322,7 @@ def render_app():
                     "thinking_content": thinking_content,
                     "complexity_score": st.session_state.live_complexity,
                     "thinking_limit": st.session_state.live_thinking_limit,
-                    "latency": elapsed
+                    "latency": elapsed,
                 }
             )
         st.session_state.prompt = ""
@@ -337,7 +348,9 @@ def render_app():
 
         st.title("Manual Settings")
         slider_impl()
-        st.session_state.manual_thinking = st.toggle("Manually set Thought Budget?", value=False)
+        st.session_state.manual_thinking = st.toggle(
+            "Manually set Thought Budget?", value=False
+        )
 
 
 if st.session_state.show_landing:

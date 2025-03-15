@@ -12,5 +12,7 @@ dependencies = [
     "watchdog>=6.0.0",
     "streamlit-extras",
     "streamlit-keyup",
-    "textstat>=0.7.5"
+    "textstat>=0.7.5",
+    "orjson>=3.10.15",
+    "plotly>=6.0.0",
 ]
