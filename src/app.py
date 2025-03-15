@@ -10,7 +10,12 @@ from streamlit_extras.bottom_container import bottom
 
 # from streamlit_extras.stylable_container import stylable_container
 from complexity_analyzer import analyze_complexity
-from helpers import custom_metric, get_thinking_limit, process_stream
+from helpers import (
+    create_radial_gauge,
+    custom_metric,
+    get_thinking_limit,
+    process_stream,
+)
 from thought_params import ThoughtParameters, get_thinking_emoji
 
 build_dir = Path(__file__).parent.absolute() / "components" / "keyup"
@@ -224,30 +229,38 @@ def render_app():
         with st.container():
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.markdown(
-                    custom_metric("Complexity Score", f"{curr_complexity:.2f}"),
-                    unsafe_allow_html=True,
+                st.plotly_chart(
+                    create_radial_gauge(
+                        curr_complexity, title="Current Query Complexity"
+                    ),
+                    use_container_width=True,
+                    key="bottom_gauge",
                 )
 
             with col2:
-                st.markdown(
-                    custom_metric("Thinking Limit", f"{curr_thinking_limit} tokens"),
-                    unsafe_allow_html=True,
-                )
-
-            with col3:
+                emoji = get_thinking_emoji(curr_thinking_limit)
                 st.markdown(
                     custom_metric(
-                        "Last Query Complexity",
-                        f"{st.session_state.live_complexity:.2f}",
+                        "Thinking Budget", emoji, f"{curr_thinking_limit} tokens"
                     ),
                     unsafe_allow_html=True,
                 )
 
+            with col3:
+                st.plotly_chart(
+                    create_radial_gauge(
+                        st.session_state.live_complexity, title="Last Query Complexity"
+                    ),
+                    use_container_width=True,
+                    key="bottom_gauge2",
+                )
+
             with col4:
+                emoji = get_thinking_emoji(st.session_state.live_thinking_limit)
                 st.markdown(
                     custom_metric(
-                        "Last Thinking Limit",
+                        "Previous Thinking Budget",
+                        emoji,
                         f"{st.session_state.live_thinking_limit} tokens",
                     ),
                     unsafe_allow_html=True,
