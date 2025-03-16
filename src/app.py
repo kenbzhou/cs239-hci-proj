@@ -321,7 +321,8 @@ def render_app():
 
                             Never explicitly mention the complexity score of the query. Feel free to mention the high-level complexity of the query, however.
 
-                            Always prioritize being informative and helpful at all complexity levels, while adjusting your response depth to match the assigned thinking resources. If users indicate a desire for more depth, be responsive by using more of your thinking budget.""",
+                            Always prioritize being informative and helpful at all complexity levels, while adjusting your response depth to match the assigned thinking resources. If users indicate a desire for more depth, be responsive by using more of your thinking budget.
+                            IMPORTANT: Don't mention the thinking limit or complexity score in your responses. Just focus on providing the best answer possible based on the user's query and your thinking budget.""",
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
