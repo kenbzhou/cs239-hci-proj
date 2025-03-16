@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 
-from thought_params import ThoughtParameters, get_thinking_emoji
+from thought_params import ThoughtParameters
 
 
 # Function to calculate thinking limit based on complexity
@@ -11,6 +11,28 @@ def get_thinking_limit(complexity):
         return ThoughtParameters.BALANCED.value["budget_tokens"]  # Moderate complexity
     else:
         return int(complexity * 16000)  # Complex queries
+
+
+def map_manual_thinking(complexity: str):
+    """
+    Maps a manual thinking setting from the UI to a complexity score
+
+    Args:
+        complexity (str): Manual thinking setting, one of
+            ["Quick", "Speedy", "Balanced", "Thorough", "Deep"]
+
+    Returns:
+        float: Complexity score between 0.0 and 1.0
+    """
+
+    mappings = {
+        "Quick": 0.05,
+        "Speedy": 0.25,
+        "Balanced": 0.50,
+        "Thorough": 0.75,
+        "Deep": 1.00,
+    }
+    return mappings[complexity]
 
 
 # Custom metric for stats display
@@ -70,6 +92,6 @@ def create_radial_gauge(complexity_score, title="Complexity Score"):
     )
 
     fig.update_layout(
-        height=250,
+        height=235,
     )
     return fig

@@ -14,6 +14,7 @@ from helpers import (
     create_radial_gauge,
     custom_metric,
     get_thinking_limit,
+    map_manual_thinking,
     process_stream,
 )
 from thought_params import ThoughtParameters, get_thinking_emoji
@@ -96,15 +97,18 @@ def send_data():
 
 
 @st.fragment
-def slider_impl():
-    st.session_state.slider_complexity = st.slider(
+def slider_impl(enabled: bool):
+    st.session_state.slider_complexity = st.select_slider(
         "Select a thought budget:",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.5,  # Default value
-        step=0.01,
-        format="%.2f",  # Ensures two decimal places
-        # label_visibility="hidden"
+        options=[
+            "Quick",
+            "Speedy",
+            "Balanced",
+            "Thorough",
+            "Deep",
+        ],
+        value="Balanced",
+        disabled=not enabled,
     )
 
 
@@ -204,7 +208,7 @@ def render_app():
     curr_complexity = (
         analyze_complexity(value)
         if not st.session_state.manual_thinking
-        else st.session_state.slider_complexity
+        else map_manual_thinking(st.session_state.slider_complexity)
     )
     curr_thinking_limit = get_thinking_limit(curr_complexity)
 
@@ -212,7 +216,7 @@ def render_app():
         complexity_score = (
             analyze_complexity(prompt)
             if not st.session_state.manual_thinking
-            else st.session_state.slider_complexity
+            else map_manual_thinking(st.session_state.slider_complexity)
         )
         thinking_limit = get_thinking_limit(complexity_score)
 
@@ -362,10 +366,11 @@ def render_app():
             st.rerun()
 
         st.title("Manual Settings")
-        slider_impl()
+
         st.session_state.manual_thinking = st.toggle(
-            "Manually set Thought Budget?", value=False
+            "Override Thinking Depth?", value=False
         )
+        slider_impl(enabled=st.session_state.manual_thinking)
 
 
 if st.session_state.show_landing:
