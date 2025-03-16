@@ -72,20 +72,21 @@ def create_radial_gauge(complexity_score, title="Complexity Score"):
         go.Indicator(
             mode="gauge+number",
             title=title,
-            value=round(complexity_score, 2),
+            value=round(complexity_score * 100, 2),
+            # number={"suffix": "/100"},
             gauge={
-                "axis": {"range": [0, 1], "tickwidth": 1},
+                "axis": {"range": [0, 100], "tickwidth": 1},
                 "bar": {"color": "darkgray"},
                 "steps": [
-                    {"range": [0, 0.3], "color": "lightgreen"},
-                    {"range": [0.3, 0.6], "color": "yellow"},
-                    {"range": [0.6, 0.8], "color": "orange"},
-                    {"range": [0.8, 1], "color": "red"},
+                    {"range": [0, 30], "color": "lightgreen"},
+                    {"range": [30, 60], "color": "yellow"},
+                    {"range": [60, 80], "color": "orange"},
+                    {"range": [80, 100], "color": "red"},
                 ],
                 "threshold": {
                     "line": {"color": "black", "width": 4},
                     "thickness": 0.75,
-                    "value": complexity_score,
+                    "value": complexity_score * 100,
                 },
             },
         )
