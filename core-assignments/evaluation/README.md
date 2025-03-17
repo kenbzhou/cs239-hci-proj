@@ -311,6 +311,7 @@ To what extent does visualizing the thinking actually matter to the user? In the
 
 ## Did you use a generative AI tool for this assignment? If so, which tool(s) and how?
 ![YIPPEE](../images/thumbs_up.png)
+
 Used ChatGPT to generate polyfit regression line code and code cleaning for some graphical analysis of quantitative data. No other usage.
 
 ## How much time did you spend on this assignment as a group? Individually?
